@@ -414,7 +414,8 @@ def seed_enrollments(db: Session, users, courses, semesters):
     for student in students:
         # Enroll student in courses from their department
         for course in courses:
-            if course.department_id == student.department_id:
+            # Check if student is enrolled in a program that belongs to the same department as the course
+            if student.department and course.department_id == student.department.id:
                 # Check if enrollment already exists
                 existing = (
                     db.query(CourseEnrollment)

@@ -23,6 +23,8 @@ from app.schemas.course import (
     CourseEnrollmentRequest,
     CourseEnrollmentResponse,
     CourseStats,
+    StudentCourseListResponse,
+    LecturerCourseListResponse,
 )
 from app.services.course_service import CourseService
 
@@ -189,3 +191,84 @@ async def get_course_stats(
     """
     service = CourseService(db)
     return service.get_course_stats()
+
+
+@router.get("/my/enrolled", response_model=StudentCourseListResponse)
+async def get_my_enrolled_courses(
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(
+        100, ge=1, le=1000, description="Maximum number of records to return"
+    ),
+    status_filter: Optional[str] = Query(
+        None,
+        description="Filter by enrollment status (enrolled, completed, failed, dropped)",
+    ),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Get current user's enrolled courses (Students only).
+
+    Args:
+        skip: Number of records to skip
+        limit: Maximum number of records to return
+        status_filter: Filter by enrollment status
+        db: Database session
+        current_user: Current authenticated user
+
+    Returns:
+        StudentCourseListResponse: List of enrolled courses
+    """
+    # Check if user is a student
+    if current_user.role != "student":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This endpoint is only available for students",
+        )
+
+    service = CourseService(db)
+    return service.get_student_courses(
+        user_id=str(current_user.id),
+        skip=skip,
+        limit=limit,
+        status_filter=status_filter,
+    )
+
+
+@router.get("/my/coordinated", response_model=LecturerCourseListResponse)
+async def get_my_coordinated_courses(
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(
+        100, ge=1, le=1000, description="Maximum number of records to return"
+    ),
+    active_only: bool = Query(False, description="Filter only active courses"),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Get current user's coordinated courses (Lecturers only).
+
+    Args:
+        skip: Number of records to skip
+        limit: Maximum number of records to return
+        active_only: Filter only active courses
+        db: Database session
+        current_user: Current authenticated user
+
+    Returns:
+        LecturerCourseListResponse: List of coordinated courses
+    """
+    # Check if user is a lecturer
+    if current_user.role != "lecturer":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This endpoint is only available for lecturers",
+        )
+
+    service = CourseService(db)
+    return service.get_lecturer_courses(
+        user_id=str(current_user.id),
+        skip=skip,
+        limit=limit,
+        active_only=active_only,
+    )

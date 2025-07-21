@@ -27,7 +27,7 @@ class UserBase(BaseModel):
     matric_number: str = Field(..., description="Student matriculation number")
     phone_number: Optional[str] = Field(None, max_length=20, description="Phone number")
     role: str = Field(..., description="User role")
-    department_id: Optional[str] = Field(None, description="User's department ID")
+    # Note: department_id is no longer used - users are assigned to departments through program enrollment
     level: Optional[str] = Field(
         None, description="Academic level (ND1, ND2, HND1, HND2, etc.)"
     )
@@ -85,6 +85,8 @@ class UserProfile(BaseModel):
     matric_number: str = Field(..., description="Student matriculation number")
     phone_number: Optional[str] = Field(None, description="Phone number")
     role: str = Field(..., description="User role")
+    program_id: Optional[str] = Field(None, description="Program ID")
+    program_name: Optional[str] = Field(None, description="Program name")
     department_id: Optional[str] = Field(None, description="Department ID")
     department_name: Optional[str] = Field(None, description="Department name")
     level: Optional[str] = Field(None, description="Academic level")
@@ -190,7 +192,7 @@ class UserSimpleResponse(BaseModel):
     matric_number: str = Field(..., description="Student matriculation number")
     phone_number: Optional[str] = Field(None, description="Phone number")
     role: str = Field(..., description="User role")
-    department_id: Optional[str] = Field(None, description="User's department ID")
+    # Note: department_id is no longer used - users are assigned to departments through program enrollment
     is_active: bool = Field(..., description="User active status")
     is_verified: bool = Field(..., description="Email verification status")
     created_at: datetime = Field(..., description="Account creation date")

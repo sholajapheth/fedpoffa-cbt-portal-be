@@ -72,7 +72,7 @@ async def get_users(
                     "phone_number": user.phone_number,
                     "role": user.role,
                     "department_id": (
-                        str(user.department_id) if user.department_id else None
+                        str(user.department.id) if user.department else None
                     ),
                     "is_active": user.is_active,
                     "is_verified": user.is_verified,
@@ -180,7 +180,7 @@ async def get_user_by_id(
             "matric_number": user.matric_number,
             "phone_number": user.phone_number,
             "role": user.role,
-            "department_id": str(user.department_id) if user.department_id else None,
+            "department_id": str(user.department.id) if user.department else None,
             "is_active": user.is_active,
             "is_verified": user.is_verified,
             "created_at": user.created_at,

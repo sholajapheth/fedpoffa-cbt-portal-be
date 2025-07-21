@@ -6,22 +6,12 @@ This module contains the User model with FEDPOFFA-specific fields and relationsh
 
 import uuid
 from datetime import datetime
-from sqlalchemy import Boolean, Column, DateTime, String, Text, ForeignKey, Table
+from sqlalchemy import Boolean, Column, DateTime, String, Text, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from app.db.base import Base
 from app.core.config import FedpoffaConstants
-
-# Association table for many-to-many relationship between users and courses
-user_course_association = Table(
-    "user_courses",
-    Base.metadata,
-    Column("user_id", UUID(as_uuid=True), ForeignKey("users.id"), primary_key=True),
-    Column("course_id", UUID(as_uuid=True), ForeignKey("courses.id"), primary_key=True),
-    Column("enrolled_at", DateTime, default=datetime.utcnow),
-    Column("is_active", Boolean, default=True),
-)
 
 
 class User(Base):
@@ -47,10 +37,6 @@ class User(Base):
     phone_number = Column(String(20), nullable=True)
 
     # FEDPOFFA academic information
-    department_id = Column(
-        UUID(as_uuid=True), ForeignKey("departments.id"), nullable=True
-    )
-    level = Column(String(20), nullable=True)  # ND1, ND2, HND1, HND2, etc.
     matric_number = Column(
         String(50), unique=True, nullable=False
     )  # Required for all users
@@ -73,10 +59,11 @@ class User(Base):
     last_login = Column(DateTime, nullable=True)
 
     # Relationships
-    department = relationship("Department", back_populates="users")
-    enrolled_courses = relationship(
-        "Course", secondary=user_course_association, back_populates="enrolled_students"
-    )
+    # Program enrollments (primary enrollment method)
+    program_enrollments = relationship("UserProgram", back_populates="user")
+
+    # Course enrollments (for specific course enrollments within programs)
+    course_enrollments = relationship("CourseEnrollment", back_populates="student")
 
     # Assessment relationships
     created_assessments = relationship("Assessment", back_populates="creator")
@@ -124,3 +111,30 @@ class User(Base):
     def is_it_admin(self):
         """Check if user is an IT administrator."""
         return self.role == FedpoffaConstants.ROLE_IT_ADMIN
+
+    @property
+    def current_program_enrollment(self):
+        """Get the user's current active program enrollment."""
+        if not self.program_enrollments:
+            return None
+        # Return the first active program enrollment
+        for enrollment in self.program_enrollments:
+            if enrollment.is_active:
+                return enrollment
+        return None
+
+    @property
+    def department(self):
+        """Get the user's department through their program enrollment."""
+        enrollment = self.current_program_enrollment
+        if enrollment and enrollment.program:
+            return enrollment.program.department
+        return None
+
+    @property
+    def current_level(self):
+        """Get the user's current academic level from program enrollment."""
+        enrollment = self.current_program_enrollment
+        if enrollment and hasattr(enrollment, "current_level"):
+            return enrollment.current_level
+        return None

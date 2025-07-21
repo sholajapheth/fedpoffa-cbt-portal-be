@@ -15,13 +15,7 @@ class DepartmentBase(BaseModel):
     name: str = Field(..., min_length=2, max_length=255, description="Department name")
     code: str = Field(..., min_length=2, max_length=10, description="Department code")
     description: Optional[str] = Field(None, description="Department description")
-    hod_name: Optional[str] = Field(
-        None, max_length=255, description="Head of Department name"
-    )
-    hod_email: Optional[str] = Field(None, description="Head of Department email")
-    hod_phone: Optional[str] = Field(
-        None, max_length=20, description="Head of Department phone"
-    )
+    hod_id: Optional[str] = Field(None, description="Head of Department user ID")
 
 
 class DepartmentCreate(DepartmentBase):
@@ -36,9 +30,7 @@ class DepartmentUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=2, max_length=255)
     code: Optional[str] = Field(None, min_length=2, max_length=10)
     description: Optional[str] = Field(None)
-    hod_name: Optional[str] = Field(None, max_length=255)
-    hod_email: Optional[str] = Field(None)
-    hod_phone: Optional[str] = Field(None, max_length=20)
+    hod_id: Optional[str] = Field(None, description="Head of Department user ID")
     is_active: Optional[bool] = Field(None)
 
 
@@ -51,10 +43,15 @@ class DepartmentResponse(DepartmentBase):
     updated_at: datetime = Field(..., description="Last update date")
 
     # Computed fields
-    total_users: int = Field(0, description="Total number of users")
+    total_programs: int = Field(0, description="Total number of programs")
     total_courses: int = Field(0, description="Total number of courses")
     students_count: int = Field(0, description="Number of students")
     lecturers_count: int = Field(0, description="Number of lecturers")
+
+    # HOD information (derived from user)
+    hod_name: Optional[str] = Field(None, description="Head of Department name")
+    hod_email: Optional[str] = Field(None, description="Head of Department email")
+    hod_phone: Optional[str] = Field(None, description="Head of Department phone")
 
     class Config:
         from_attributes = True

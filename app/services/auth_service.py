@@ -87,7 +87,6 @@ class AuthService:
             matric_number=user_data.matric_number,
             password_hash=hashed_password,
             role=user_data.role,
-            department_id=user_data.department_id,
             phone_number=user_data.phone_number,
             is_active=True,
             is_verified=False,
@@ -149,7 +148,6 @@ class AuthService:
             "email": user.email,
             "matric_number": user.matric_number,
             "role": user.role,
-            "department_id": str(user.department_id) if user.department_id else None,
         }
 
         # Generate tokens
@@ -162,7 +160,6 @@ class AuthService:
             "email": user.email,
             "matric_number": user.matric_number,
             "role": user.role,
-            "department_id": str(user.department_id) if user.department_id else None,
             "is_verified": user.is_verified,
         }
 
@@ -211,7 +208,6 @@ class AuthService:
             "email": user.email,
             "matric_number": user.matric_number,
             "role": user.role,
-            "department_id": str(user.department_id) if user.department_id else None,
         }
 
         new_access_token = create_access_token(token_data)

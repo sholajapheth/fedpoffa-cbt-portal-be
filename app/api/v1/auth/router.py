@@ -169,13 +169,15 @@ async def get_current_user_info(
                 "full_name": f"{current_user.first_name} {current_user.middle_name or ''} {current_user.last_name}".strip(),
                 "role": current_user.role,
                 "department_id": (
-                    str(current_user.department_id)
-                    if current_user.department_id
-                    else None
+                    str(current_user.department.id) if current_user.department else None
                 ),
                 "is_active": current_user.is_active,
                 "is_verified": current_user.is_verified,
-                "level": current_user.level,
+                "level": (
+                    current_user.current_level
+                    if hasattr(current_user, "current_level")
+                    else None
+                ),
                 "phone_number": current_user.phone_number,
             },
         }

@@ -45,15 +45,18 @@ class UserService:
                 status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
             )
 
-        # Get department name if department_id exists
+        # Get program information through current enrollment
+        program_id = None
+        program_name = None
+        department_id = None
         department_name = None
-        if user.department_id:
-            department = (
-                self.db.query(Department)
-                .filter(Department.id == user.department_id)
-                .first()
-            )
-            department_name = department.name if department else None
+
+        if user.current_program_enrollment:
+            program = user.current_program_enrollment.program
+            program_id = str(program.id)
+            program_name = program.name
+            department_id = str(program.department.id)
+            department_name = program.department.name
 
         return UserProfile(
             id=str(user.id),
@@ -65,9 +68,11 @@ class UserService:
             matric_number=user.matric_number,
             phone_number=user.phone_number,
             role=user.role,
-            department_id=str(user.department_id) if user.department_id else None,
+            program_id=program_id,
+            program_name=program_name,
+            department_id=department_id,
             department_name=department_name,
-            level=user.level,
+            level=user.current_level,
             profile_picture=user.profile_picture,
             bio=user.bio,
             is_active=user.is_active,
@@ -76,7 +81,7 @@ class UserService:
             updated_at=user.updated_at,
             last_login=user.last_login,
             enrolled_courses_count=(
-                len(user.enrolled_courses) if user.enrolled_courses else 0
+                len(user.course_enrollments) if user.course_enrollments else 0
             ),
             completed_assessments_count=0,  # TODO: Implement assessment counting
         )
@@ -117,11 +122,16 @@ class UserService:
         if profile_data.phone_number is not None:
             user.phone_number = profile_data.phone_number
 
+        # Note: department_id is no longer directly editable
+        # Users are assigned to departments through program enrollment
         if profile_data.department_id is not None:
-            user.department_id = profile_data.department_id
+            # This would need to be handled through program enrollment
+            pass
 
+        # Note: level is now managed through program enrollment
         if profile_data.level is not None:
-            user.level = profile_data.level
+            # This would need to be handled through program enrollment
+            pass
 
         if profile_data.matric_number is not None:
             user.matric_number = profile_data.matric_number
@@ -211,8 +221,10 @@ class UserService:
         if role:
             query = query.filter(User.role == role)
 
+        # Note: department filtering now needs to be done through program enrollment
         if department_id:
-            query = query.filter(User.department_id == department_id)
+            # This would need to be implemented through program enrollment
+            pass
 
         if is_active is not None:
             query = query.filter(User.is_active == is_active)
@@ -308,10 +320,15 @@ class UserService:
             user.middle_name = user_data.middle_name
         if user_data.phone_number is not None:
             user.phone_number = user_data.phone_number
+        # Note: department_id is no longer directly editable
+        # Users are assigned to departments through program enrollment
         if user_data.department_id is not None:
-            user.department_id = user_data.department_id
+            # This would need to be handled through program enrollment
+            pass
+        # Note: level is now managed through program enrollment
         if user_data.level is not None:
-            user.level = user_data.level
+            # This would need to be handled through program enrollment
+            pass
         if user_data.matric_number is not None:
             user.matric_number = user_data.matric_number
         if user_data.profile_picture is not None:

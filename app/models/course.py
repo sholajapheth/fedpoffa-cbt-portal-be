@@ -17,7 +17,7 @@ class Course(Base):
     """
     Course model for FEDPOFFA CBT system.
 
-    This model represents FEDPOFFA courses with their associated departments, students, and lecturers.
+    This model represents FEDPOFFA courses within programs.
     """
 
     __tablename__ = "courses"
@@ -34,6 +34,7 @@ class Course(Base):
     department_id = Column(
         UUID(as_uuid=True), ForeignKey("departments.id"), nullable=False
     )
+    program_id = Column(UUID(as_uuid=True), ForeignKey("programs.id"), nullable=False)
     credits = Column(Integer, default=0)
     level = Column(String(20), nullable=True)  # ND1, ND2, HND1, HND2, etc.
     semester = Column(String(20), nullable=True)  # First, Second, Summer
@@ -55,10 +56,9 @@ class Course(Base):
 
     # Relationships
     department = relationship("Department", back_populates="courses")
+    program = relationship("Program", back_populates="courses")
     course_coordinator = relationship("User", foreign_keys=[course_coordinator_id])
-    enrolled_students = relationship(
-        "User", secondary="user_courses", back_populates="enrolled_courses"
-    )
+    course_enrollments = relationship("CourseEnrollment", back_populates="course")
     assessments = relationship("Assessment", back_populates="course")
 
     def __repr__(self):
@@ -67,7 +67,7 @@ class Course(Base):
     @property
     def total_enrolled_students(self):
         """Get total number of enrolled students."""
-        return len(self.enrolled_students) if self.enrolled_students else 0
+        return len(self.course_enrollments) if self.course_enrollments else 0
 
     @property
     def total_assessments(self):
@@ -78,6 +78,11 @@ class Course(Base):
     def department_name(self):
         """Get department name."""
         return self.department.name if self.department else None
+
+    @property
+    def program_name(self):
+        """Get program name."""
+        return self.program.name if self.program else None
 
     @property
     def coordinator_name(self):

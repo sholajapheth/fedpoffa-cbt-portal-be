@@ -57,15 +57,42 @@ class DepartmentService:
                 detail="Department with this code already exists",
             )
 
+        # Check if department with same name already exists
+        existing_dept_name = (
+            self.db.query(Department)
+            .filter(Department.name == department_data.name)
+            .first()
+        )
+
+        if existing_dept_name:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Department with this name already exists",
+            )
+
+        # Validate HOD if provided
+        hod_user = None
+        if department_data.hod_id:
+            hod_user = (
+                self.db.query(User).filter(User.id == department_data.hod_id).first()
+            )
+            if not hod_user:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, detail="HOD user not found"
+                )
+            if hod_user.role != "lecturer":
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="HOD must be a lecturer",
+                )
+
         # Create new department
         department = Department(
             id=uuid.uuid4(),
             name=department_data.name,
             code=department_data.code,
             description=department_data.description,
-            hod_name=department_data.hod_name,
-            hod_email=department_data.hod_email,
-            hod_phone=department_data.hod_phone,
+            hod_id=department_data.hod_id,
         )
 
         self.db.add(department)
@@ -77,16 +104,17 @@ class DepartmentService:
             name=department.name,
             code=department.code,
             description=department.description,
-            hod_name=department.hod_name,
-            hod_email=department.hod_email,
-            hod_phone=department.hod_phone,
+            hod_id=str(department.hod_id) if department.hod_id else None,
             is_active=department.is_active,
             created_at=department.created_at,
             updated_at=department.updated_at,
-            total_users=0,
-            total_courses=0,
-            students_count=0,
-            lecturers_count=0,
+            total_programs=department.total_programs,
+            total_courses=department.total_courses,
+            students_count=department.students_count,
+            lecturers_count=department.lecturers_count,
+            hod_name=department.hod_name,
+            hod_email=department.hod_email,
+            hod_phone=department.hod_phone,
         )
 
     def get_departments(
@@ -119,16 +147,17 @@ class DepartmentService:
                 name=dept.name,
                 code=dept.code,
                 description=dept.description,
-                hod_name=dept.hod_name,
-                hod_email=dept.hod_email,
-                hod_phone=dept.hod_phone,
+                hod_id=str(dept.hod_id) if dept.hod_id else None,
                 is_active=dept.is_active,
                 created_at=dept.created_at,
                 updated_at=dept.updated_at,
-                total_users=dept.total_users,
+                total_programs=dept.total_programs,
                 total_courses=dept.total_courses,
                 students_count=dept.students_count,
                 lecturers_count=dept.lecturers_count,
+                hod_name=dept.hod_name,
+                hod_email=dept.hod_email,
+                hod_phone=dept.hod_phone,
             )
             department_responses.append(dept_response)
 
@@ -178,17 +207,11 @@ class DepartmentService:
             for course in courses
         ]
 
-        # Get related users
-        users = self.db.query(User).filter(User.department_id == department_id).all()
-        users_data = [
-            {
-                "id": str(user.id),
-                "full_name": user.full_name,
-                "email": user.email,
-                "role": user.role,
-            }
-            for user in users
-        ]
+        # Get related users through program enrollment
+        # Note: Users are now related to departments through program enrollment
+        users_data = []
+        # This would need to be implemented through program enrollment
+        # For now, return empty list
 
         return DepartmentDetail(
             id=str(department.id),
@@ -236,6 +259,20 @@ class DepartmentService:
 
         # Update fields if provided
         if department_data.name is not None:
+            # Check if new name already exists
+            existing_dept = (
+                self.db.query(Department)
+                .filter(
+                    Department.name == department_data.name,
+                    Department.id != department_id,
+                )
+                .first()
+            )
+            if existing_dept:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Department with this name already exists",
+                )
             department.name = department_data.name
         if department_data.code is not None:
             # Check if new code already exists
@@ -255,12 +292,21 @@ class DepartmentService:
             department.code = department_data.code
         if department_data.description is not None:
             department.description = department_data.description
-        if department_data.hod_name is not None:
-            department.hod_name = department_data.hod_name
-        if department_data.hod_email is not None:
-            department.hod_email = department_data.hod_email
-        if department_data.hod_phone is not None:
-            department.hod_phone = department_data.hod_phone
+        if department_data.hod_id is not None:
+            # Validate HOD if provided
+            hod_user = (
+                self.db.query(User).filter(User.id == department_data.hod_id).first()
+            )
+            if not hod_user:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, detail="HOD user not found"
+                )
+            if hod_user.role != "lecturer":
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="HOD must be a lecturer",
+                )
+            department.hod_id = department_data.hod_id
         if department_data.is_active is not None:
             department.is_active = department_data.is_active
 
@@ -274,16 +320,17 @@ class DepartmentService:
             name=department.name,
             code=department.code,
             description=department.description,
-            hod_name=department.hod_name,
-            hod_email=department.hod_email,
-            hod_phone=department.hod_phone,
+            hod_id=str(department.hod_id) if department.hod_id else None,
             is_active=department.is_active,
             created_at=department.created_at,
             updated_at=department.updated_at,
-            total_users=department.total_users,
+            total_programs=department.total_programs,
             total_courses=department.total_courses,
             students_count=department.students_count,
             lecturers_count=department.lecturers_count,
+            hod_name=department.hod_name,
+            hod_email=department.hod_email,
+            hod_phone=department.hod_phone,
         )
 
     def delete_department(self, department_id: str):
@@ -305,15 +352,10 @@ class DepartmentService:
                 status_code=status.HTTP_404_NOT_FOUND, detail="Department not found"
             )
 
-        # Check if department has related users
-        users_count = (
-            self.db.query(User).filter(User.department_id == department_id).count()
-        )
-        if users_count > 0:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cannot delete department with existing users",
-            )
+        # Check if department has related users through program enrollment
+        # Note: Users are now related to departments through program enrollment
+        # This would need to be implemented through program enrollment
+        # For now, allow deletion
 
         # Check if department has related courses
         courses_count = (

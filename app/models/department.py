@@ -17,7 +17,7 @@ class Department(Base):
     """
     Department model for FEDPOFFA CBT system.
 
-    This model represents FEDPOFFA departments with their associated courses and users.
+    This model represents FEDPOFFA departments with their associated programs and courses.
     """
 
     __tablename__ = "departments"
@@ -31,9 +31,9 @@ class Department(Base):
     description = Column(Text, nullable=True)
 
     # FEDPOFFA-specific fields
-    hod_name = Column(String(255), nullable=True)  # Head of Department
-    hod_email = Column(String(255), nullable=True)
-    hod_phone = Column(String(20), nullable=True)
+    hod_id = Column(
+        UUID(as_uuid=True), ForeignKey("users.id"), nullable=True
+    )  # Head of Department
 
     # Status
     is_active = Column(Boolean, default=True)
@@ -43,16 +43,17 @@ class Department(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
-    users = relationship("User", back_populates="department")
+    programs = relationship("Program", back_populates="department")
     courses = relationship("Course", back_populates="department")
+    hod = relationship("User", foreign_keys=[hod_id])
 
     def __repr__(self):
         return f"<Department(id={self.id}, name='{self.name}', code='{self.code}')>"
 
     @property
-    def total_users(self):
-        """Get total number of users in this department."""
-        return len(self.users) if self.users else 0
+    def total_programs(self):
+        """Get total number of programs in this department."""
+        return len(self.programs) if self.programs else 0
 
     @property
     def total_courses(self):
@@ -61,14 +62,38 @@ class Department(Base):
 
     @property
     def students_count(self):
-        """Get number of students in this department."""
-        return (
-            len([user for user in self.users if user.is_student]) if self.users else 0
-        )
+        """Get number of students in this department through program enrollments."""
+        total_students = 0
+        for program in self.programs:
+            total_students += len([e for e in program.enrolled_students if e.is_active])
+        return total_students
+
+    @property
+    def total_users(self):
+        """Get total number of users in this department through program enrollments."""
+        total_users = 0
+        for program in self.programs:
+            total_users += len([e for e in program.enrolled_students if e.is_active])
+        return total_users
 
     @property
     def lecturers_count(self):
         """Get number of lecturers in this department."""
-        return (
-            len([user for user in self.users if user.is_lecturer]) if self.users else 0
-        )
+        # This would need to be implemented based on how lecturers are assigned
+        # For now, return 0 as we need to define lecturer assignment logic
+        return 0
+
+    @property
+    def hod_name(self):
+        """Get HOD name."""
+        return self.hod.full_name if self.hod else None
+
+    @property
+    def hod_email(self):
+        """Get HOD email."""
+        return self.hod.email if self.hod else None
+
+    @property
+    def hod_phone(self):
+        """Get HOD phone number."""
+        return self.hod.phone_number if self.hod else None

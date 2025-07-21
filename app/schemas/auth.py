@@ -28,7 +28,6 @@ class UserRegister(BaseModel):
     matric_number: str = Field(..., description="Student matric number")
     password: str = Field(..., min_length=8, description="User password")
     role: str = Field(..., description="User role")
-    department_id: str = Field(..., description="User's department ID")
     phone_number: Optional[str] = Field(None, max_length=20, description="Phone number")
 
     @validator("matric_number")
@@ -120,7 +119,6 @@ class TokenData(BaseModel):
     email: str = Field(..., description="User email")
     matric_number: str = Field(..., description="Matric number")
     role: str = Field(..., description="User role")
-    department: str = Field(..., description="User department")
     exp: datetime = Field(..., description="Token expiration")
 
 

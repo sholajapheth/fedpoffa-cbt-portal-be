@@ -10,6 +10,7 @@ from fastapi import APIRouter
 from app.api.v1.auth.router import router as auth_router
 from app.api.v1.users.router import router as users_router
 from app.api.v1.departments.router import router as departments_router
+from app.api.v1.programs.router import router as programs_router
 from app.api.v1.courses.router import router as courses_router
 from app.api.v1.semesters.router import router as semesters_router
 from app.api.v1.questions.router import router as questions_router
@@ -27,6 +28,7 @@ api_router.include_router(users_router, prefix="/users", tags=["Users"])
 api_router.include_router(
     departments_router, prefix="/departments", tags=["Departments"]
 )
+api_router.include_router(programs_router, prefix="/programs", tags=["Programs"])
 api_router.include_router(courses_router, prefix="/courses", tags=["Courses"])
 api_router.include_router(semesters_router, prefix="/semesters", tags=["Semesters"])
 api_router.include_router(questions_router, prefix="/questions", tags=["Questions"])
